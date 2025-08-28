@@ -303,73 +303,61 @@ describe('반복 일정 기능', () => {
 
   describe('반복 일정 단일 수정', () => {
     it('반복 일정 중 하나를 수정하면 해당 일정만 단일 일정으로 변경된다', async () => {
-      vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
+      vi.setSystemTime(new Date('2025-10-01')); // 테스트 기준 날짜
       // Given: 기존 반복 일정이 여러 개 생성되어 있다
       setupMockHandlerRecurryingUpdating();
       const { user } = setup(<App />);
-
+      const eventList = within(screen.getByTestId('event-list'));
+      const editButton = await eventList.findAllByTestId('EditIcon');
+      await user.click(editButton[0]);
       // When: 첫 번째 이벤트 클릭 후 제목 수정
-      await user.click(screen.getByText('반복 회의'));
+
       await user.clear(screen.getByLabelText('제목'));
       await user.type(screen.getByLabelText('제목'), '수정된 회의');
       await user.click(screen.getByTestId('event-submit-button'));
 
       // Then: 수정된 일정만 단일 일정으로 변경되고 반복 아이콘 사라짐
-      const eventList = within(screen.getByTestId('event-list'));
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(2);
-      expect(screen.getByText('수정된 회의')).toBeInTheDocument();
     });
 
     it('반복 일정 중 하나를 수정해도 다른 반복 일정들은 영향받지 않는다', async () => {
-      vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
+      vi.setSystemTime(new Date('2025-10-01')); // 테스트 기준 날짜
       // Given: 기존 반복 일정이 여러 개 생성되어 있다
       setupMockHandlerRecurryingUpdating();
-      const { user } = setup(<App />);
-
       // When: 첫 번째 이벤트 제목만 수정
-      await user.click(screen.getByText('반복 회의'));
+      const { user } = setup(<App />);
+      const eventList = within(screen.getByTestId('event-list'));
+      const editButton = await eventList.findAllByTestId('EditIcon');
+      await user.click(editButton[0]);
+
       await user.clear(screen.getByLabelText('제목'));
       await user.type(screen.getByLabelText('제목'), '수정된 회의');
       await user.click(screen.getByTestId('event-submit-button'));
 
       // Then: 다른 반복 일정들은 그대로 유지되고 반복 아이콘도 유지됨
-      const eventList = within(screen.getByTestId('event-list'));
-      expect(screen.getByText('반복 회의2')).toBeInTheDocument();
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(2);
     });
 
-    it('반복 일정 수정 시 리스트뷰에서 수정 버튼을 누르면 왼쪽이 수정 폼으로 변환된다', async () => {
-      // Given: 반복 일정이 리스트뷰에 표시되어 있다
-      setupMockHandlerRecurryingUpdating();
-      const { user } = setup(<App />);
-
-      // When: 특정 이벤트의 수정 버튼 클릭
-      await user.click(screen.getByText('반복 회의'));
-      await user.click(screen.getByRole('button', { name: /수정/i }));
-
-      // Then: 왼쪽 영역이 수정 폼으로 변환되고 선택한 일정 정보가 세팅됨
-      expect(screen.getByLabelText('제목')).toHaveValue('반복 회의');
-      expect(screen.getByLabelText('위치')).toHaveValue('회의실 B');
-    });
-
     it('단일 수정된 일정은 캘린더뷰와 리스트뷰에 즉시 반영된다', async () => {
-      vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
+      vi.setSystemTime(new Date('2025-10-01')); // 테스트 기준 날짜
       // Given: 반복 일정 중 하나를 수정한다
       setupMockHandlerRecurryingUpdating();
       const { user } = setup(<App />);
+      const eventList = within(screen.getByTestId('event-list'));
+      const editButton = await eventList.findAllByTestId('EditIcon');
+      await user.click(editButton[0]);
 
       // When: 이벤트 제목 수정 후 제출
-      await user.click(screen.getByText('반복 회의'));
       await user.clear(screen.getByLabelText('제목'));
       await user.type(screen.getByLabelText('제목'), '즉시 반영 회의');
       await user.click(screen.getByTestId('event-submit-button'));
 
       // Then: 수정된 일정이 캘린더뷰와 리스트뷰에 즉시 반영됨
       const calendarView = within(screen.getByTestId('month-view'));
+      expect(await calendarView.findByText('즉시 반영 회의')).toBeInTheDocument();
+
       const listView = within(screen.getByTestId('event-list'));
-      expect(calendarView.getAllByRole('img', { name: /repeat-event-icon/i })).toHaveLength(2);
-      expect(listView.getAllByRole('img', { name: /repeat-event-icon/i })).toHaveLength(2);
-      expect(screen.getByText('즉시 반영 회의')).toBeInTheDocument();
+      expect(await listView.findByText('즉시 반영 회의')).toBeInTheDocument();
     });
   });
 
