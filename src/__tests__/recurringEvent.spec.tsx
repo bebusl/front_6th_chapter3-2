@@ -1,5 +1,5 @@
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent, { UserEvent } from '@testing-library/user-event';
 import { SnackbarProvider } from 'notistack';
 import { ReactElement } from 'react';
@@ -363,52 +363,77 @@ describe('반복 일정 기능', () => {
 
   describe('반복 일정 단일 삭제', () => {
     it('반복 일정 중 하나를 삭제하면 해당 일정만 삭제된다', async () => {
-      vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
-      // Given: 기존 이벤트가 존재
+      vi.setSystemTime(new Date('2025-10-01')); // 테스트 기준 날짜
+
+      // Given: 서로 다른 날짜의 반복 일정 2개가 존재
       setupMockHandlerRecurryingDeletion();
       const { user } = setup(<App />);
 
-      // When: 삭제할 이벤트 클릭 후 삭제
-      await user.click(screen.getByText('삭제할 이벤트'));
-      await user.click(screen.getByRole('button', { name: /삭제/i }));
+      // 초기 상태: 두 날짜의 이벤트가 모두 존재함을 확인
+      expect(await screen.findByText('2025-10-15')).toBeInTheDocument(); // 첫 번째 일정
+      expect(await screen.findByText('2025-10-22')).toBeInTheDocument(); // 두 번째 일정
 
-      // Then: 선택한 이벤트만 삭제되고 화면에서 사라짐
-      expect(screen.queryByText('삭제할 이벤트')).not.toBeInTheDocument();
+      // When: 첫 번째 이벤트 삭제
       const eventList = within(screen.getByTestId('event-list'));
-      expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(1);
+      const deleteButtons = await eventList.findAllByTestId('DeleteIcon');
+      await user.click(deleteButtons[0]);
+
+      // Then: 첫 번째 일정(2025-10-15)만 삭제되고, 두 번째 일정(2025-10-22)은 남아있음
+      await waitFor(() => {
+        expect(eventList.queryByText('2025-10-15')).not.toBeInTheDocument(); // 삭제됨
+        expect(eventList.getByText('2025-10-22')).toBeInTheDocument(); // 남아있음
+      });
+
+      // 전체 이벤트 개수도 2개에서 1개로 감소
+      expect(eventList.queryAllByText('삭제할 이벤트')).toHaveLength(1);
     });
 
     it('반복 일정 중 하나를 삭제해도 다른 반복 일정들은 영향받지 않는다', async () => {
-      vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
-      // Given: 기존 이벤트 여러 개가 존재
+      vi.setSystemTime(new Date('2025-10-01')); // 테스트 기준 날짜
+
+      // Given: 기존 이벤트 2개가 존재
       setupMockHandlerRecurryingDeletion();
       const { user } = setup(<App />);
 
-      // When: 첫 번째 이벤트 삭제
-      await user.click(screen.getByText('삭제할 이벤트'));
-      await user.click(screen.getByRole('button', { name: /삭제/i }));
-
-      // Then: 다른 이벤트는 그대로 존재
-      expect(screen.getByText('남은 이벤트')).toBeInTheDocument();
       const eventList = within(screen.getByTestId('event-list'));
-      expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(1);
+
+      // 초기 상태: 2개의 반복 일정이 존재함을 확인
+      expect(await eventList.findAllByText('삭제할 이벤트')).toHaveLength(2);
+      expect(await eventList.findAllByTestId('RepeatIcon')).toHaveLength(2);
+
+      // When: 첫 번째 이벤트 삭제
+      const deleteButtons = await eventList.findAllByTestId('DeleteIcon');
+      await user.click(deleteButtons[0]);
+
+      // Then: 하나만 삭제되고 나머지 반복 일정은 그대로 존재
+      await waitFor(() => {
+        expect(eventList.queryAllByText('삭제할 이벤트')).toHaveLength(1);
+        expect(eventList.queryAllByTestId('RepeatIcon')).toHaveLength(1);
+      });
     });
 
     it('단일 삭제된 일정은 캘린더뷰와 리스트뷰에 즉시 반영된다', async () => {
-      vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
+      vi.setSystemTime(new Date('2025-10-01')); // 테스트 기준 날짜
       // Given: 삭제할 이벤트 존재
       setupMockHandlerRecurryingDeletion();
       const { user } = setup(<App />);
 
       // When: 삭제 버튼 클릭
-      await user.click(screen.getByText('삭제할 이벤트'));
-      await user.click(screen.getByRole('button', { name: /삭제/i }));
+      const eventList = within(screen.getByTestId('event-list'));
+      const deleteButton = await eventList.findAllByTestId('DeleteIcon');
+      await user.click(deleteButton[0]);
 
       // Then: 캘린더뷰와 리스트뷰에서 즉시 삭제 반영
       const calendarView = within(screen.getByTestId('month-view'));
       const listView = within(screen.getByTestId('event-list'));
-      expect(calendarView.queryAllByRole('img', { name: /repeat-event-icon/i })).toHaveLength(1);
-      expect(listView.queryAllByRole('img', { name: /repeat-event-icon/i })).toHaveLength(1);
+      await waitFor(() => {
+        expect(listView.queryAllByText('삭제할 이벤트')).toHaveLength(1);
+      });
+
+      // 캘린더뷰에서도 1개만 남아있는지 확인
+      await waitFor(() => {
+        expect(calendarView.queryAllByText('삭제할 이벤트')).toHaveLength(1);
+      });
     });
   });
 });
