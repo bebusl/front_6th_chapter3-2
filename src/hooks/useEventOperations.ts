@@ -31,6 +31,9 @@ export const useEventOperations = (editing: boolean, onSave?: () => void) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(eventData),
         });
+        if (!response.ok) {
+          throw new Error('Failed to save event');
+        }
       } else {
         const { repeat, date, ...rest } = eventData;
         const isRepeat = repeat.type !== 'none';
