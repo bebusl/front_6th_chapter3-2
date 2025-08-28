@@ -53,7 +53,6 @@ const saveSchedule = async (user: UserEvent, form: Omit<Event, 'id' | 'notificat
 describe('반복 일정 기능', () => {
   describe('반복 일정 생성', () => {
     it('매일 반복 일정을 생성할 수 있다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       setupMockHandlerRecurryingCreation(); // 반복 일정 생성용 모킹 적용
       // Given: 사용자가 매일 반복 유형을 선택하고 일정 정보를 입력한다
@@ -76,11 +75,9 @@ describe('반복 일정 기능', () => {
 
       // 8월 15일부터 8월 31일까지 = 17개
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(17);
-      vi.useRealTimers();
     });
 
     it('매주 반복 일정을 생성할 수 있다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       setupMockHandlerRecurryingCreation();
       // Given: 사용자가 매주 반복 유형을 선택하고 일정 정보를 입력한다
@@ -102,11 +99,9 @@ describe('반복 일정 기능', () => {
       const eventList = within(screen.getByTestId('month-view'));
       // 8월 15, 22, 29 = 3개
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(3);
-      vi.useRealTimers();
     });
 
     it('매월 반복 일정을 생성할 수 있다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       setupMockHandlerRecurryingCreation();
       // Given: 사용자가 매월 반복 유형을 선택하고 일정 정보를 입력한다
@@ -127,11 +122,9 @@ describe('반복 일정 기능', () => {
       // Then: 지정된 기간 동안 매월 반복되는 일정이 생성
       const eventList = within(screen.getByTestId('month-view'));
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(1);
-      vi.useRealTimers();
     });
 
     it('매년 반복 일정을 생성할 수 있다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       setupMockHandlerRecurryingCreation();
       // Given: 사용자가 매년 반복 유형을 선택하고 일정 정보를 입력한다
@@ -152,11 +145,9 @@ describe('반복 일정 기능', () => {
       // Then: 지정된 기간 동안 매년 반복되는 일정이 생성
       const eventList = within(screen.getByTestId('month-view'));
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(1);
-      vi.useRealTimers();
     });
 
     it('31일에 매월 반복 일정을 선택하면 31일이 있는 달에만 생성된다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       setupMockHandlerRecurryingCreation();
 
@@ -188,13 +179,10 @@ describe('반복 일정 기능', () => {
       await user.click(nextButton); // 10월 → 31일 있음
       eventList = within(screen.getByTestId('month-view'));
       expect(eventList.queryByTestId('RepeatIcon')).toBeInTheDocument();
-
-      vi.useRealTimers();
     });
 
     it('윤년 2월 29일에 매년 반복 일정을 선택하면 윤년에만 생성된다', async () => {
       setupMockHandlerRecurryingCreation();
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2024-02-01')); // 테스트 기준 날짜
       // Given: 사용자가 윤년 2월 29일에 매년 반복 유형을 선택하고 일정 정보를 입력한다
       // When: 반복 일정 생성 버튼을 클릭한다
@@ -220,13 +208,10 @@ describe('반복 일정 기능', () => {
       }
       eventList = within(screen.getByTestId('month-view'));
       expect(eventList.queryByTestId('RepeatIcon')).not.toBeInTheDocument();
-
-      vi.useRealTimers();
     });
 
     it('반복 종료일을 2025-08-31로 설정하면 해당 날짜까지만 반복된다', async () => {
       setupMockHandlerRecurryingCreation();
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-03-01')); // 테스트 기준 날짜
 
       // Given: 사용자가 반복 일정을 생성하고 종료일을 2025-08-31로 설정한다
@@ -262,8 +247,8 @@ describe('반복 일정 기능', () => {
 
       await user.type(screen.getByLabelText('반복 종료일'), newEvent.repeat.endDate);
       await user.click(screen.getByTestId('event-submit-button'));
-      // await saveSchedule(user);
 
+      // Then: 설정한 종료일까지만 반복 일정이 생성된다
       for (let i = 0; i < 6; i++) {
         const eventList = within(screen.getByTestId('month-view'));
         expect(eventList.queryByTestId('RepeatIcon')).toBeInTheDocument();
@@ -271,14 +256,10 @@ describe('반복 일정 기능', () => {
       }
 
       const eventList = within(screen.getByTestId('month-view'));
-
       expect(eventList.queryByTestId('RepeatIcon')).not.toBeInTheDocument();
-
-      vi.useRealTimers();
     });
 
     it('반복 일정 생성 즉시 캘린더와 리스트뷰에 모든 반복 일정이 표시된다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
 
       setupMockHandlerRecurryingCreation();
@@ -297,16 +278,15 @@ describe('반복 일정 기능', () => {
         repeat: { type: 'monthly', interval: 1 },
       });
 
+      // Then: 반복 일정이 캘린더뷰와 리스트뷰에 즉시 표시된다
       const calendarViewEventList = within(screen.getByTestId('month-view'));
       expect(calendarViewEventList.getByTestId('RepeatIcon')).toBeInTheDocument();
 
       const listViewEventList = within(screen.getByTestId('event-list'));
       expect(listViewEventList.getByTestId('RepeatIcon')).toBeInTheDocument();
     });
-    vi.useRealTimers();
   });
 
-  // 위에서 이미 icon이 있음을 가정하고 있으므로 불필요해 보여서 skip
   describe('반복 일정 표시', () => {
     it.skip('반복 일정은 캘린더에 반복 아이콘으로 구분되어 표시된다', () => {
       // Given: 반복 일정이 생성되어 있다
@@ -320,9 +300,9 @@ describe('반복 일정 기능', () => {
       // Then: 반복 일정은 일반 일정과 구분되는 반복 아이콘과 함께 표시된다
     });
   });
+
   describe('반복 일정 단일 수정', () => {
     it('반복 일정 중 하나를 수정하면 해당 일정만 단일 일정으로 변경된다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       // Given: 기존 반복 일정이 여러 개 생성되어 있다
       setupMockHandlerRecurryingUpdating();
@@ -338,11 +318,9 @@ describe('반복 일정 기능', () => {
       const eventList = within(screen.getByTestId('event-list'));
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(2);
       expect(screen.getByText('수정된 회의')).toBeInTheDocument();
-      vi.useRealTimers();
     });
 
     it('반복 일정 중 하나를 수정해도 다른 반복 일정들은 영향받지 않는다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       // Given: 기존 반복 일정이 여러 개 생성되어 있다
       setupMockHandlerRecurryingUpdating();
@@ -358,7 +336,6 @@ describe('반복 일정 기능', () => {
       const eventList = within(screen.getByTestId('event-list'));
       expect(screen.getByText('반복 회의2')).toBeInTheDocument();
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(2);
-      vi.useRealTimers();
     });
 
     it('반복 일정 수정 시 리스트뷰에서 수정 버튼을 누르면 왼쪽이 수정 폼으로 변환된다', async () => {
@@ -376,7 +353,6 @@ describe('반복 일정 기능', () => {
     });
 
     it('단일 수정된 일정은 캘린더뷰와 리스트뷰에 즉시 반영된다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       // Given: 반복 일정 중 하나를 수정한다
       setupMockHandlerRecurryingUpdating();
@@ -394,13 +370,11 @@ describe('반복 일정 기능', () => {
       expect(calendarView.getAllByRole('img', { name: /repeat-event-icon/i })).toHaveLength(2);
       expect(listView.getAllByRole('img', { name: /repeat-event-icon/i })).toHaveLength(2);
       expect(screen.getByText('즉시 반영 회의')).toBeInTheDocument();
-      vi.useRealTimers();
     });
   });
 
   describe('반복 일정 단일 삭제', () => {
     it('반복 일정 중 하나를 삭제하면 해당 일정만 삭제된다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       // Given: 기존 이벤트가 존재
       setupMockHandlerRecurryingDeletion();
@@ -414,11 +388,9 @@ describe('반복 일정 기능', () => {
       expect(screen.queryByText('삭제할 이벤트')).not.toBeInTheDocument();
       const eventList = within(screen.getByTestId('event-list'));
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(1);
-      vi.useRealTimers();
     });
 
     it('반복 일정 중 하나를 삭제해도 다른 반복 일정들은 영향받지 않는다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       // Given: 기존 이벤트 여러 개가 존재
       setupMockHandlerRecurryingDeletion();
@@ -432,11 +404,9 @@ describe('반복 일정 기능', () => {
       expect(screen.getByText('남은 이벤트')).toBeInTheDocument();
       const eventList = within(screen.getByTestId('event-list'));
       expect(eventList.getAllByTestId('RepeatIcon')).toHaveLength(1);
-      vi.useRealTimers();
     });
 
     it('단일 삭제된 일정은 캘린더뷰와 리스트뷰에 즉시 반영된다', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-08-01')); // 테스트 기준 날짜
       // Given: 삭제할 이벤트 존재
       setupMockHandlerRecurryingDeletion();
@@ -451,7 +421,6 @@ describe('반복 일정 기능', () => {
       const listView = within(screen.getByTestId('event-list'));
       expect(calendarView.queryAllByRole('img', { name: /repeat-event-icon/i })).toHaveLength(1);
       expect(listView.queryAllByRole('img', { name: /repeat-event-icon/i })).toHaveLength(1);
-      vi.useRealTimers();
     });
   });
 });
